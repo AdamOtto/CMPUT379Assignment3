@@ -4,6 +4,11 @@
 
 int main(int argc, char *argv[]) {
 
+    if (argc < 8) {
+        printf("Incorrect number of arguments supplied.\n");
+        exit(1);
+    }
+
     unsigned short pgsize = (unsigned short) strtoul(argv[1], NULL, 0);
     unsigned char tlbentries = (unsigned char) strtoul(argv[2], NULL, 0);
     char *mode = argv[3];
@@ -19,5 +24,8 @@ int main(int argc, char *argv[]) {
     printf("physpages: %d\n", physpages);
     printf("policy: %s\n", policy);
     printf("trace: ");
+
+
+    return 0;
 
 }
