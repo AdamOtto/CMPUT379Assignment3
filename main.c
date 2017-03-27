@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+int ReadTraceFile(char * FileName, int quantum, int startLine);
+int checkIfAllFilesAreRead(int fileFlags[], int size);
+
 int main(int argc, char *argv[]) {
 
     if (argc < 8) {
@@ -23,9 +26,68 @@ int main(int argc, char *argv[]) {
     printf("quantum: %d\n", quantum);
     printf("physpages: %d\n", physpages);
     printf("policy: %s\n", policy);
-    printf("trace: ");
+    
+    int fileNotEmpty[argc - 7];
+    int fileLineToRead[argc - 7];
+    int i;
 
+    //Set all fileNotEmpty to true/1
+    for(i = 0; i < argc - 7; i++) {
+         fileNotEmpty[i] = 1;
+         fileLineToRead[i] = 0;
+    }
 
+    while(checkIfAllFilesAreRead(fileNotEmpty,argc - 7)){
+	    for(i = 7; i < argc; i++) {
+		if(fileNotEmpty[i - 7]){
+		    fileNotEmpty[i - 7] = ReadTraceFile(argv[i], quantum, fileLineToRead[i-7]);
+                    fileLineToRead[i - 7] = fileLineToRead[i-7] + quantum;
+                }
+	    }
+    }
     return 0;
 
 }
+
+int checkIfAllFilesAreRead(int fileFlags[], int size)
+{
+	int i;
+	for(i = 0; i < size; i++) {
+		if(fileFlags[i]) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int ReadTraceFile(char * FileName, int quantum, int startLine) {
+	int i;
+	char line[34];
+	FILE *fp;
+	fp = fopen(FileName, "r");
+	for(i = 0; i < quantum + startLine; i++) {
+		if (fscanf(fp, "%s", line) != EOF)
+		{
+			if(i >= startLine) {
+				//This is where we should process the read in lines.
+				printf("%s\n",line);
+			}
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	fclose(fp);
+	return 1;
+}
+
+
+
+
+
+
+
+
+
+
