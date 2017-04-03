@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int ReadTraceFile(char * FileName, int quantum, int startLine);
+int ReadTraceFile(char * FileName, int pageSize, int tblEntry, int quantum);
 int checkIfAllFilesAreRead(int fileFlags[], int size);
 
 int main(int argc, char *argv[]) {
@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     int fileNotEmpty[argc - 7];
     int fileLineToRead[argc - 7];
     int i;
-
+/*
     //Set all fileNotEmpty to true/1
     for(i = 0; i < argc - 7; i++) {
          fileNotEmpty[i] = 1;
@@ -45,6 +45,9 @@ int main(int argc, char *argv[]) {
                 }
 	    }
     }
+*/	
+	ReadTraceFile(argv[0], pgsize, tlbentries, quantum);
+
     return 0;
 
 }
@@ -60,11 +63,23 @@ int checkIfAllFilesAreRead(int fileFlags[], int size)
 	return 0;
 }
 
-int ReadTraceFile(char * FileName, int quantum, int startLine) {
-	int i;
-	char line[34];
-	FILE *fp;
-	fp = fopen(FileName, "r");
+int ReadTraceFile(char * FileName, int pageSize, int tblEntry, int quantum) {
+	int i, j;
+	int bytesToRead = (pageSize + tblEntry) / 8;
+	FILE *fp;	
+	fp = fopen(FileName, "rb");
+	unsigned char buffer[bytesToRead];
+	
+	for(j = 0; j< quantum; j++) {
+		
+		if (fread(buffer,bytesToRead,1,fp) == 1) {
+			for(i = 0; i < bytesToRead; i++)
+				printf("%x ", buffer[i]);
+			printf("\n");
+		}
+	}
+	
+	/*
 	for(i = 0; i < quantum + startLine; i++) {
 		if (fscanf(fp, "%s", line) != EOF)
 		{
@@ -78,6 +93,7 @@ int ReadTraceFile(char * FileName, int quantum, int startLine) {
 			return 0;
 		}
 	}
+	*/
 	fclose(fp);
 	return 1;
 }

@@ -3,7 +3,7 @@ CFLAGS = -m32
 
 all: main.c
 	$(CC) $(CFLAGS) $< -o tvm379
-	./tvm379 16 8 g 100 1000 f
+	#./tvm379 16 8 g 100 1000 f
 
 clean:
 	rm -f *~ *.o tvm379
