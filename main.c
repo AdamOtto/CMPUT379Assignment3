@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
-int ReadTraceFile(char * FileName, int pageSize, int tblEntry, int quantum, int startByte);
+int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte);
+unsigned int convert32bitCharToInt(unsigned char buffer[], int pageOffset);
 
 int main(int argc, char *argv[]) {
 
@@ -29,6 +31,10 @@ int main(int argc, char *argv[]) {
     int fileLineToRead[argc - 7];
     int i, j;
 
+	//We're always dealing with a 32bit mem-ref.
+	//Get the page offset. represents the number of bits used in the offset.
+	int pageOffset = (log(pgsize) / log(2));
+	printf("offset: %d\n", pageOffset);
     //Set all fileNotEmpty to true/1
     for(i = 0; i < argc - 7; i++) {
          fileLineToRead[i] = 0;
@@ -37,7 +43,7 @@ int main(int argc, char *argv[]) {
     j = 0;
     while(j < physpages){
 	printf("Pages Read: %d\n",j);
-	ReadTraceFile(argv[i], pgsize, tlbentries, quantum, fileLineToRead[i - 7]);
+	ReadTraceFile(argv[i], pageOffset, quantum, fileLineToRead[i - 7]);
 	fileLineToRead[i - 7] = fileLineToRead[i-7] + quantum;
 	j += quantum;
 	i += 1;
@@ -49,21 +55,31 @@ int main(int argc, char *argv[]) {
 
 }
 
-int ReadTraceFile(char * FileName, int pageSize, int tblEntry, int quantum, int startByte) {
+
+unsigned int convert32bitCharToInt(unsigned char buffer[], int pageOffset){
+	unsigned int val = 0;	
+	val = (unsigned int)buffer[0] << 24 | (unsigned int)buffer[1] << 16 | (unsigned int)buffer[2] << 8 | (unsigned int)buffer[3];
+	val = val >> pageOffset;
+	return val;
+}
+
+int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte) {
 	int i, j;
-	int bytesToRead = (pageSize + tblEntry) / 8;
+	int bytesToRead = 4; //4bytes * 8bits = 32 bits
 	FILE *fp;	
 	fp = fopen(FileName, "rb");
 	unsigned char buffer[bytesToRead];
+	unsigned int pageNumber = 0;
 	for(j = 0; j < quantum + startByte; j++) {
 		if (fread(buffer,bytesToRead,1,fp) == 1) {
-			
 			if(j >= startByte) {
 				printf("%d: ", j);
 				for(i = 0; i < bytesToRead; i++) {
 					printf("%x ", buffer[i]);
+					//printf("%d ", (unsigned int)buffer[i]);
 				}
-				printf("\n");
+				pageNumber = convert32bitCharToInt(buffer, pageOffset);
+				printf("page#: %d\n", pageNumber);
 			}
 		}
 		else
