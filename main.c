@@ -48,8 +48,8 @@ int main(int argc, char *argv[]) {
 	TLBpageout = (int *)malloc(sizeof(int) * argc - 7);
 	TLBavg = (float *)malloc(sizeof(float) * argc - 7);
 
-	//We're always dealing with a 32bit mem-ref.
-	//Get the page offset. represents the number of bits used in the offset.
+	// We're always dealing with a 32bit mem-ref.
+	// Get the page offset. represents the number of bits used in the offset.
 	int pageOffset = (log(pgsize) / log(2));
 	//printf("offset: %d\n", pageOffset);
 
