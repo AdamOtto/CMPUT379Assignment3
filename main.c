@@ -14,7 +14,7 @@ char * policy;
 int * TLBhits;
 int * TLBfault;
 int * TLBpageout;
-int * TLBavg;
+float * TLBavg;
 
 int main(int argc, char *argv[]) {
 
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
 	TLBhits = (int *)malloc(sizeof(int) * argc - 7);
 	TLBfault = (int *)malloc(sizeof(int) * argc - 7);
 	TLBpageout = (int *)malloc(sizeof(int) * argc - 7);
-	TLBavg = (int *)malloc(sizeof(int) * argc - 7);
+	TLBavg = (float *)malloc(sizeof(float) * argc - 7);
 
 	//We're always dealing with a 32bit mem-ref.
 	//Get the page offset. represents the number of bits used in the offset.

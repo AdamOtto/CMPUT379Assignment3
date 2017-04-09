@@ -33,8 +33,8 @@ int FIFO_Enqueue (struct FIFO_Queue q, int newOb) {
 	}
 	DiscardedValue = q.array[0];
 	q.array[0] = newOb;
-	if(*q.element_count + 1 <= q.size){
+	//if(*q.element_count + 1 <= q.size){
 		*q.element_count = *q.element_count + 1;
-	}
+	//}
 	return DiscardedValue;
 }
