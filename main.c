@@ -6,6 +6,8 @@
 int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte);
 unsigned int convert32bitCharToInt(unsigned char buffer[], int pageOffset);
 
+
+
 int main(int argc, char *argv[]) {
 
     if (argc < 8) {
@@ -28,33 +30,51 @@ int main(int argc, char *argv[]) {
     printf("physpages: %d\n", physpages);
     printf("policy: %s\n", policy);
     
-    int fileLineToRead[argc - 7];
-    int i, j;
+	int fileLineToRead[argc - 7];
+	int fileEOFReached[argc - 7];
+	int i, j;
 
 	//We're always dealing with a 32bit mem-ref.
 	//Get the page offset. represents the number of bits used in the offset.
 	int pageOffset = (log(pgsize) / log(2));
-	printf("offset: %d\n", pageOffset);
-    //Set all fileNotEmpty to true/1
-    for(i = 0; i < argc - 7; i++) {
-         fileLineToRead[i] = 0;
-    }
-    i = 7;
-    j = 0;
-    while(j < physpages){
-	printf("Pages Read: %d\n",j);
-	ReadTraceFile(argv[i], pageOffset, quantum, fileLineToRead[i - 7]);
-	fileLineToRead[i - 7] = fileLineToRead[i-7] + quantum;
-	j += quantum;
-	i += 1;
-	if(i >= argc)
-		i = 7;
-    }
+	//printf("offset: %d\n", pageOffset);
 
-    return 0;
+	//Create an array that will hold the read in pages. 
+	unsigned int pageTable[physpages];
+	
+	//Set all fileNotEmpty to true/1
+	for(i = 0; i < argc - 7; i++) {
+		fileLineToRead[i] = 0;
+		fileEOFReached[i] = 1;
+	}
+	i = 7;
+	while(TraceEOFCheck(fileEOFReached, argc - 7) == 1){
+		printf("Reading File: %s\n",argv[i]);
+		fileEOFReached[i - 7] = ReadTraceFile(argv[i], pageOffset, quantum, fileLineToRead[i - 7]);
+		//printf("fileEOFReached[%d]: %d\n",i, fileEOFReached[i]);
+		fileLineToRead[i - 7] = fileLineToRead[i-7] + quantum;
+		i += 1;
+		if(i >= argc)
+			i = 7;
+	}
 
+	return 0;
 }
 
+int TraceEOFCheck (int EOFtracker[], int size)
+{
+	int i;
+	for (i = 0; i < size; i++)
+	{
+		//printf("EOF%d: %d\n", i , EOFtracker[i]);
+		if (EOFtracker[i] == 1) {
+			//printf("EOF Check returning 1\n");
+			return 1;
+		}
+	}
+	//printf("EOF Check returning 0\n");
+	return 0;
+}
 
 unsigned int convert32bitCharToInt(unsigned char buffer[], int pageOffset){
 	unsigned int val = 0;	
@@ -76,14 +96,16 @@ int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte) {
 				printf("%d: ", j);
 				for(i = 0; i < bytesToRead; i++) {
 					printf("%x ", buffer[i]);
-					//printf("%d ", (unsigned int)buffer[i]);
 				}
 				pageNumber = convert32bitCharToInt(buffer, pageOffset);
 				printf("page#: %d\n", pageNumber);
 			}
 		}
 		else
+		{
+			printf("End of file reached.\n");
 			return 0;
+		}
 		
 	}
 	fclose(fp);
