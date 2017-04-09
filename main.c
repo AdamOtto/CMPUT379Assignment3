@@ -6,8 +6,6 @@
 int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte);
 unsigned int convert32bitCharToInt(unsigned char buffer[], int pageOffset);
 
-
-
 int main(int argc, char *argv[]) {
 
     if (argc < 8) {
@@ -34,8 +32,8 @@ int main(int argc, char *argv[]) {
 	int fileEOFReached[argc - 7];
 	int i, j;
 
-	//We're always dealing with a 32bit mem-ref.
-	//Get the page offset. represents the number of bits used in the offset.
+	// We're always dealing with a 32bit mem-ref.
+	// Get the page offset. represents the number of bits used in the offset.
 	int pageOffset = (log(pgsize) / log(2));
 	//printf("offset: %d\n", pageOffset);
 
