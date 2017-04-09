@@ -2,11 +2,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "FIFO_Queue.h"
 
-int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte);
+int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, int globalIndex);
 unsigned int convert32bitCharToInt(unsigned char buffer[], int pageOffset);
 
+struct FIFO_Queue q;
+char * mode;
+char * policy;
 
+int * TLBhits;
+int * TLBfault;
+int * TLBpageout;
+int * TLBavg;
 
 int main(int argc, char *argv[]) {
 
@@ -17,10 +25,10 @@ int main(int argc, char *argv[]) {
 
     unsigned short pgsize = (unsigned short) strtoul(argv[1], NULL, 0);
     unsigned char tlbentries = (unsigned char) strtoul(argv[2], NULL, 0);
-    char *mode = argv[3];
+    mode = argv[3];
     unsigned int quantum = (unsigned int) strtoul(argv[4], NULL, 0);
     unsigned int physpages = (unsigned int) strtoul(argv[5], NULL, 0);
-    char *policy = argv[6];
+    policy = argv[6];
 
     printf("\n***********CMPUT379***********\n");
     printf("pgsize: %hu\n", pgsize);
@@ -33,15 +41,24 @@ int main(int argc, char *argv[]) {
 	int fileLineToRead[argc - 7];
 	int fileEOFReached[argc - 7];
 	int i, j;
+	
+	//Allocate space for the global stats.
+	TLBhits = (int *)malloc(sizeof(int) * argc - 7);
+	TLBfault = (int *)malloc(sizeof(int) * argc - 7);
+	TLBpageout = (int *)malloc(sizeof(int) * argc - 7);
+	TLBavg = (int *)malloc(sizeof(int) * argc - 7);
 
 	//We're always dealing with a 32bit mem-ref.
 	//Get the page offset. represents the number of bits used in the offset.
 	int pageOffset = (log(pgsize) / log(2));
 	//printf("offset: %d\n", pageOffset);
 
-	//Create an array that will hold the read in pages. 
-	unsigned int pageTable[physpages];
-	
+	//Create an array that will hold the read in pages.
+	q.size = physpages;
+	q.element_count = (int*)malloc(sizeof(int));
+	*q.element_count = 0;
+	q.array = (int*)malloc(sizeof(int) * physpages);
+
 	//Set all fileNotEmpty to true/1
 	for(i = 0; i < argc - 7; i++) {
 		fileLineToRead[i] = 0;
@@ -50,7 +67,7 @@ int main(int argc, char *argv[]) {
 	i = 7;
 	while(TraceEOFCheck(fileEOFReached, argc - 7) == 1){
 		printf("Reading File: %s\n",argv[i]);
-		fileEOFReached[i - 7] = ReadTraceFile(argv[i], pageOffset, quantum, fileLineToRead[i - 7]);
+		fileEOFReached[i - 7] = ReadTraceFile(argv[i], pageOffset, quantum, fileLineToRead[i - 7], i - 7);
 		//printf("fileEOFReached[%d]: %d\n",i, fileEOFReached[i]);
 		fileLineToRead[i - 7] = fileLineToRead[i-7] + quantum;
 		i += 1;
@@ -58,6 +75,14 @@ int main(int argc, char *argv[]) {
 			i = 7;
 	}
 
+	for (i = q.size - 1; i >= 0; i--) {
+		printf("%d: %d\n", i, q.array[i]);
+	}
+
+	for(i = 0; i < argc - 7; i++)
+	{
+		printf("%d %d %d %d\n", TLBhits[i], TLBfault[i], TLBpageout[i], TLBavg[i]);
+	}
 	return 0;
 }
 
@@ -83,7 +108,7 @@ unsigned int convert32bitCharToInt(unsigned char buffer[], int pageOffset){
 	return val;
 }
 
-int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte) {
+int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, int globalIndex) {
 	int i, j;
 	int bytesToRead = 4; //4bytes * 8bits = 32 bits
 	FILE *fp;	
@@ -99,6 +124,20 @@ int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte) {
 				}
 				pageNumber = convert32bitCharToInt(buffer, pageOffset);
 				printf("page#: %d\n", pageNumber);
+				if(*policy == 'f') {
+					if(TBL_hit(q, pageNumber) == 0) {
+						FIFO_Enqueue(q, pageNumber);
+						TLBfault[globalIndex] = TLBfault[globalIndex] + 1;
+						if(*q.element_count > q.size)
+							TLBpageout[globalIndex] = TLBpageout[globalIndex] + 1;
+					}
+					else {
+						TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
+					}
+					
+					
+				}
+				
 			}
 		}
 		else
