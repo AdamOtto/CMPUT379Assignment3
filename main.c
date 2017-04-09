@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
 
 	for(i = 0; i < argc - 7; i++)
 	{
-		printf("%d %d %d %d\n", TLBhits[i], TLBfault[i], TLBpageout[i], TLBavg[i]);
+		printf("%d %d %d %f\n", TLBhits[i], TLBfault[i], TLBpageout[i], TLBavg[i]);
 	}
 	return 0;
 }
