@@ -55,8 +55,8 @@ int main(int argc, char *argv[]) {
 int checkIfAllFilesAreRead(int fileFlags[], int size)
 {
 	int i;
-	for(i = 0; i < size; i++) {
-		if(fileFlags[i]) {
+	for (i = 0; i < size; i++) {
+		if (fileFlags[i]) {
 			return 1;
 		}
 	}
