@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     TLBhits = (int *)malloc(sizeof(int) * argc - 7);
     TLBfault = (int *)malloc(sizeof(int) * argc - 7);
     TLBpageout = (int *)malloc(sizeof(int) * argc - 7);
-    TLBavg = (int *)malloc(sizeof(int) * argc - 7);
+    TLBavg = (float *)malloc(sizeof(float) * argc - 7);
 
 
 	// We're always dealing with a 32bit mem-ref.
