@@ -39,7 +39,6 @@ int main(int argc, char *argv[]) {
     printf("physpages: %d\n", physpages);
     printf("policy: %s\n", policy);
     
-<<<<<<< HEAD
     int fileLineToRead[argc - 7];
     int fileEOFReached[argc - 7];
     int i, j;
