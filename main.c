@@ -38,15 +38,15 @@ int main(int argc, char *argv[]) {
     printf("physpages: %d\n", physpages);
     printf("policy: %s\n", policy);
     
-	int fileLineToRead[argc - 7];
-	int fileEOFReached[argc - 7];
-	int i, j;
-	
-	//Allocate space for the global stats.
-	TLBhits = (int *)malloc(sizeof(int) * argc - 7);
-	TLBfault = (int *)malloc(sizeof(int) * argc - 7);
-	TLBpageout = (int *)malloc(sizeof(int) * argc - 7);
-	TLBavg = (int *)malloc(sizeof(int) * argc - 7);
+    int fileLineToRead[argc - 7];
+    int fileEOFReached[argc - 7];
+    int i, j;
+
+    // Allocate space for the global stats.
+    TLBhits = (int *)malloc(sizeof(int) * argc - 7);
+    TLBfault = (int *)malloc(sizeof(int) * argc - 7);
+    TLBpageout = (int *)malloc(sizeof(int) * argc - 7);
+    TLBavg = (int *)malloc(sizeof(int) * argc - 7);
 
 	// We're always dealing with a 32bit mem-ref.
 	// Get the page offset. represents the number of bits used in the offset.
