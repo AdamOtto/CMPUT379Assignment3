@@ -1,17 +1,27 @@
+#include "FIFO_Queue.h"
+#include "LRU_Stack.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include "FIFO_Queue.h"
-#include "LRU_Stack.h"
 
 int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, int globalIndex);
 unsigned int convert32bitCharToInt(unsigned char buffer[], int pageOffset);
+void FIFO_Process(int pageNumber, int globalIndex);
+void LRU_Process(int pageNumber, int globalIndex);
 
+//FIFO_q and LRU_q represent the physical memory.
 struct FIFO_Queue FIFO_q;
+struct LRU_Stack LRU_q;
+
+//TLB
+struct LRU_Stack TLB;
+
+//The mode and policy, considered read only after being set.
 char * mode;
 char * policy;
 
+//These contain the stats that are collected for each trace file.
 int * TLBhits;
 int * TLBfault;
 int * TLBpageout;
@@ -49,16 +59,32 @@ int main(int argc, char *argv[]) {
     TLBpageout = (int *)malloc(sizeof(int) * argc - 7);
     TLBavg = (int *)malloc(sizeof(int) * argc - 7);
 
+
 	// We're always dealing with a 32bit mem-ref.
 	// Get the page offset. represents the number of bits used in the offset.
 	int pageOffset = (log(pgsize) / log(2));
 	//printf("offset: %d\n", pageOffset);
 
-	//Create an array that will hold the read in pages.
-	FIFO_q.size = physpages;
-	FIFO_q.element_count = (int*)malloc(sizeof(int));
-	*FIFO_q.element_count = 0;
-	FIFO_q.array = (int*)malloc(sizeof(int) * physpages);
+	//Allocates memory for the physical pages depending on the policy.
+	if(*policy == 'f') {
+		FIFO_q.size = physpages;
+		FIFO_q.element_count = (int*)malloc(sizeof(int));
+		*FIFO_q.element_count = 0;
+		FIFO_q.array = (int*)malloc(sizeof(int) * physpages);
+	}
+	else if (*policy == 'l')
+	{
+		LRU_q.size = physpages;
+		LRU_q.element_count = (int*)malloc(sizeof(int));
+		*LRU_q.element_count = 0;
+		LRU_q.array = (int*)malloc(sizeof(int) * physpages);
+	}
+
+	//Creates space for the TLB.
+	TLB.size = physpages;
+	TLB.element_count = (int*)malloc(sizeof(int));
+	*TLB.element_count = 0;
+	TLB.array = (int*)malloc(sizeof(int) * tlbentries);
 
 	//Set all fileNotEmpty to true/1
 	for(i = 0; i < argc - 7; i++) {
@@ -110,7 +136,7 @@ unsigned int convert32bitCharToInt(unsigned char buffer[], int pageOffset){
 }
 
 int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, int globalIndex) {
-	int i, j;
+	int i, j, hit_index;
 	int bytesToRead = 4; //4bytes * 8bits = 32 bits
 	FILE *fp;	
 	fp = fopen(FileName, "rb");
@@ -125,20 +151,32 @@ int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, i
 				}
 				pageNumber = convert32bitCharToInt(buffer, pageOffset);
 				printf("page#: %d\n", pageNumber);
-				if(*policy == 'f') {
-					if(TBL_hit(FIFO_q, pageNumber) == 0) {
-						FIFO_Enqueue(FIFO_q, pageNumber);
-						TLBfault[globalIndex] = TLBfault[globalIndex] + 1;
-						if(*FIFO_q.element_count > FIFO_q.size)
-							TLBpageout[globalIndex] = TLBpageout[globalIndex] + 1;
-					}
-					else {
-						TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
-					}
-					
-					
-				}
 				
+				//Process for the LRU_TLB
+				hit_index = LRU_TBL_hit(TLB, pageNumber);
+
+				//If hit, then we are done.
+				if(hit_index != -1) {
+					LRU_add(TLB, pageNumber, hit_index);
+					TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
+				}
+				//If miss, check pageTable here.
+				else
+				{
+					//If pageTable hit, we're done.
+					
+					TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
+
+					//If pageTable miss, then add into memory.
+					if(*policy == 'f')
+					{
+						FIFO_Process(pageNumber, globalIndex);
+					}
+					else if (*policy == 'l')
+					{
+						LRU_Process(pageNumber, globalIndex);
+					}
+				}
 			}
 		}
 		else
@@ -150,4 +188,25 @@ int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, i
 	}
 	fclose(fp);
 	return 1;
+}
+
+void FIFO_Process(int pageNumber, int globalIndex)
+{
+	if(FIFO_TBL_hit(FIFO_q, pageNumber) == 0) {
+		FIFO_Enqueue(FIFO_q, pageNumber);
+		//TLBfault[globalIndex] = TLBfault[globalIndex] + 1;
+		if(*FIFO_q.element_count > FIFO_q.size)
+			TLBpageout[globalIndex] = TLBpageout[globalIndex] + 1;
+	}
+	//else {
+	//	TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
+	//}
+}
+
+void LRU_Process(int pageNumber, int globalIndex)
+{
+	int hit_index = LRU_TBL_hit(TLB, pageNumber);
+	int pageOut = LRU_add(TLB, pageNumber, hit_index);
+	if(pageOut == 1)
+		TLBpageout[globalIndex] = TLBpageout[globalIndex] + 1;
 }

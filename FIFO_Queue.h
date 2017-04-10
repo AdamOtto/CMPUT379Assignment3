@@ -16,12 +16,12 @@ struct FIFO_Queue {
 	q.array = (int*)malloc(sizeof(int) * size);
 */
 
-int TBL_hit(struct FIFO_Queue q, int newOb) {
-    int i;
-    for (i = 0; i < q.size; i++)
-        if (q.array[i] == newOb)
-            return 1;
-    return 0; 
+int FIFO_TBL_hit(struct FIFO_Queue q, int newOb) {
+	int i;
+	for (i = 0; i < q.size; i++)
+		if (q.array[i] == newOb)
+			return 1;
+	return 0; 
 }
 
 int FIFO_Enqueue (struct FIFO_Queue q, int newOb) {
