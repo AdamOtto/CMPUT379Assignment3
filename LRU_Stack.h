@@ -15,7 +15,7 @@ How to initialize:
 */
 
 
-int TBL_hit(struct LRU_Stack q, int newOb) {
+int LRU_TBL_hit(struct LRU_Stack q, int newOb) {
 	int i;
 	for (i = 0; i < q.size; i++)
 		if (q.array[i] == newOb)
@@ -25,14 +25,17 @@ int TBL_hit(struct LRU_Stack q, int newOb) {
 
 /*
 If LRU_add returns 0, then a pageout didn't occur.
-If LRU_add returns 1, then a pageout occured.*/
-int LRU_add(struct LRU_Stack q, int newOb) {
-	int i, j;
-	j = TBL_hit(q, newOb);
-	if( j != -1)
+If LRU_add returns 1, then a pageout occured.
+
+If the new Object isn't in q, then the passed in TLB_hit_index should be set to -1.
+*/
+int LRU_add(struct LRU_Stack q, int newOb, int TLB_hit_index) {
+	int i;
+	//j = TBL_hit(q, newOb);
+	if( TLB_hit_index != -1)
 	{
 		printf("%d is already in q.\n", newOb);
-		for (i = j; i < q.size - 1; i++)
+		for (i = TLB_hit_index; i < q.size - 1; i++)
 		{
 			q.array[i] = q.array[i + 1];			
 		}
