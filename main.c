@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	//Creates space for the TLB.
-	TLB.size = physpages;
+	TLB.size = tlbentries;
 	TLB.element_count = (int*)malloc(sizeof(int));
 	*TLB.element_count = 0;
 	TLB.array = (int*)malloc(sizeof(int) * tlbentries);
@@ -158,12 +158,14 @@ int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, i
 
 				//If hit, then we are done.
 				if(hit_index != -1) {
+					//printf("TLB Hit!\n");
 					LRU_add(TLB, pageNumber, hit_index);
 					TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
 				}
 				//If miss, check pageTable here.
 				else
 				{
+					//printf("TLB Miss!\n");
 					//If pageTable hit, we're done.
 					
 					TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
