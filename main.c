@@ -166,8 +166,11 @@ int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, i
 				{
 					//printf("TLB Miss!\n");
 					//If pageTable hit, we're done.
-					
-					TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
+					//TODO: Implement PageTable.
+
+					//Add the missed pageNumber into TLB.
+					LRU_add(TLB, pageNumber, hit_index);
+
 
 					//If pageTable miss, then add into memory.
 					if(*policy == 'f')
@@ -207,8 +210,9 @@ void FIFO_Process(int pageNumber, int globalIndex)
 
 void LRU_Process(int pageNumber, int globalIndex)
 {
-	int hit_index = LRU_TBL_hit(TLB, pageNumber);
-	int pageOut = LRU_add(TLB, pageNumber, hit_index);
+	int pageOut = 1;
+	int hit_index = LRU_TBL_hit(LRU_q, pageNumber);
+	pageOut = LRU_add(LRU_q, pageNumber, hit_index);
 	if(pageOut == 1)
 		TLBpageout[globalIndex] = TLBpageout[globalIndex] + 1;
 }
