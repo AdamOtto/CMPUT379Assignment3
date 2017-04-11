@@ -34,7 +34,6 @@ int LRU_add(struct LRU_Stack q, int newOb, int TLB_hit_index) {
 	//j = TBL_hit(q, newOb);
 	if( TLB_hit_index != -1)
 	{
-		printf("%d is already in q.\n", newOb);
 		for (i = TLB_hit_index; i < q.size - 1; i++)
 		{
 			q.array[i] = q.array[i + 1];			

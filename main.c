@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
     TLBhits = (int *)malloc(sizeof(int) * argc - 7);
     TLBfault = (int *)malloc(sizeof(int) * argc - 7);
     TLBpageout = (int *)malloc(sizeof(int) * argc - 7);
-    TLBavg = (int *)malloc(sizeof(int) * argc - 7);
+    TLBavg = (float *)malloc(sizeof(float) * argc - 7);
 
 
 	// We're always dealing with a 32bit mem-ref.
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	//Creates space for the TLB.
-	TLB.size = physpages;
+	TLB.size = tlbentries;
 	TLB.element_count = (int*)malloc(sizeof(int));
 	*TLB.element_count = 0;
 	TLB.array = (int*)malloc(sizeof(int) * tlbentries);
@@ -157,15 +157,20 @@ int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, i
 
 				//If hit, then we are done.
 				if(hit_index != -1) {
+					//printf("TLB Hit!\n");
 					LRU_add(TLB, pageNumber, hit_index);
 					TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
 				}
 				//If miss, check pageTable here.
 				else
 				{
+					//printf("TLB Miss!\n");
 					//If pageTable hit, we're done.
-					
-					TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
+					//TODO: Implement PageTable.
+
+					//Add the missed pageNumber into TLB.
+					LRU_add(TLB, pageNumber, hit_index);
+
 
 					//If pageTable miss, then add into memory.
 					if(*policy == 'f')
@@ -205,8 +210,9 @@ void FIFO_Process(int pageNumber, int globalIndex)
 
 void LRU_Process(int pageNumber, int globalIndex)
 {
-	int hit_index = LRU_TBL_hit(TLB, pageNumber);
-	int pageOut = LRU_add(TLB, pageNumber, hit_index);
+	int pageOut = 1;
+	int hit_index = LRU_TBL_hit(LRU_q, pageNumber);
+	pageOut = LRU_add(LRU_q, pageNumber, hit_index);
 	if(pageOut == 1)
 		TLBpageout[globalIndex] = TLBpageout[globalIndex] + 1;
 }
