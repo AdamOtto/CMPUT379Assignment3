@@ -73,7 +73,6 @@ int main(int argc, char *argv[]) {
 	FILE **traceFiles;
 	traceFiles = (FILE **)malloc(sizeof(FILE) * argc - 7);
 	for(i = 7; i < argc; i++) {
-		printf("traceFiles[%d] = fopen(%s, rb);\n", i - 7, argv[i]);
 		traceFiles[i - 7] = fopen(argv[i], "rb");
 	}
 	
@@ -108,8 +107,8 @@ int main(int argc, char *argv[]) {
 	}
 	i = 0;
 	while(TraceEOFCheck(fileEOFReached, argc - 7) == 1){
-		printf("Reading File: %s\n",argv[i + 7]);
-		fileEOFReached[i] = ReadTraceFile(traceFiles[i], pageOffset, quantum, i);//ReadTraceFile(argv[i], pageOffset, quantum, fileLineToRead[i - 7], i - 7);
+		//printf("Reading File: %s\n",argv[i + 7]);
+		fileEOFReached[i] = ReadTraceFile(traceFiles[i], pageOffset, quantum, i);
 		//printf("fileEOFReached[%d]: %d\n",i - 7, fileEOFReached[i - 7]);
 		fileLineToRead[i] = fileLineToRead[i] + quantum;
 		i += 1;
@@ -167,12 +166,12 @@ int ReadTraceFile(FILE * fp, int pageOffset, int quantum, int globalIndex) {
 	unsigned int pageNumber = 0;
 	for(j = 0; j < quantum; j++) {
 		if (fread(buffer,bytesToRead,1,fp) == 1) {
-			printf("%d: ", j);
-			for(i = 0; i < bytesToRead; i++) {
-				printf("%x ", buffer[i]);
-			}
+			//printf("%d: ", j);
+			//for(i = 0; i < bytesToRead; i++) {
+			//	printf("%x ", buffer[i]);
+			//}
 			pageNumber = convert32bitCharToInt(buffer, pageOffset);
-			printf("page#: %d\n", pageNumber);
+			//printf("page#: %d\n", pageNumber);
 			
 			//Process for the LRU_TLB
 			hit_index = LRU_TBL_hit(TLB, pageNumber);
@@ -210,8 +209,7 @@ int ReadTraceFile(FILE * fp, int pageOffset, int quantum, int globalIndex) {
 					    LRU_add(TLB, pageNumber, hit_index);
 					}
 					else {
-						TLBfault[globalIndex] = TLBfault[globalIndex] + 1;
-									
+						TLBfault[globalIndex] = TLBfault[globalIndex] + 1;	
 						//If pageTable miss, then add into memory.
 						if (*policy == 'f')
 						{
@@ -228,7 +226,7 @@ int ReadTraceFile(FILE * fp, int pageOffset, int quantum, int globalIndex) {
 		}
 		else
 		{
-			printf("End of file reached.\n");
+			//printf("End of file reached.\n");
 			return 0;
 		}
 		
