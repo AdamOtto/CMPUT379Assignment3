@@ -9,7 +9,7 @@ typedef struct tree {
 } tree;
 
 int get_int(char *prompt);
-void traverse(tree *parent);
+int traverse(tree *parent, int size);
 int insert(tree **root, int value, tree *parent);
 void flush_stdin(void);
 
@@ -39,7 +39,8 @@ int main(int argc, char *argv[]) {
 		for (i=0; i<120; i++, printf("-"));
 		printf("\n");
 		
-		traverse(root);
+		int si = traverse(root, 0);
+		printf("size = %d\n", si);
 		
 		printf("\n");
 		for (i=0; i<120; i++, printf("-"));
@@ -51,12 +52,14 @@ int main(int argc, char *argv[]) {
 }
 
 // Walk through the tree using In-Order
-void traverse(tree *parent) {
+int traverse(tree *parent, int size) {
 	if (parent != NULL) {
-		traverse(parent->left);
+		size += traverse(parent->left, size);
 		printf("(%d)->", parent->value);
-		traverse(parent->right);
+		size += traverse(parent->right, size);
+		size++;
 	}
+	return size;
 }
 
 // Insert an element in the tree
