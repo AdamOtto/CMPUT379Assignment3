@@ -182,6 +182,7 @@ int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, i
 					//If pageTable hit, we're done.
 					//TODO: Implement PageTable.
 					int b = insert(&root, pageNumber, NULL);
+					//traverse(root, 0);
 					if (b) { 
 					    TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
 					    //Add the missed pageNumber into TLB.

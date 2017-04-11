@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 int traverse(tree *parent, int size) {
 	if (parent != NULL) {
 		size = traverse(parent->left, size);
-		printf("(%d)->", parent->value);
+		printf("%d\n", parent->value);
 		size = traverse(parent->right, size);
 		size++;
 	}
