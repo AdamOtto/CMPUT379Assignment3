@@ -23,3 +23,5 @@ int addPage(struct Page_Table pt, int pageNumber) {
         pt.size++;
     }
 }
+
+
