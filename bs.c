@@ -1,3 +1,4 @@
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -54,9 +55,9 @@ int main(int argc, char *argv[]) {
 // Walk through the tree using In-Order
 int traverse(tree *parent, int size) {
 	if (parent != NULL) {
-		size += traverse(parent->left, size);
+		size = traverse(parent->left, size);
 		printf("(%d)->", parent->value);
-		size += traverse(parent->right, size);
+		size = traverse(parent->right, size);
 		size++;
 	}
 	return size;
@@ -106,4 +107,3 @@ int get_int(char *prompt) {
 void flush_stdin(void) {
 	while (getc(stdin) != '\n');
 }
-
