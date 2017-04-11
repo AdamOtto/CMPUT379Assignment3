@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
     unsigned int quantum = (unsigned int) strtoul(argv[4], NULL, 0);
     unsigned int physpages = (unsigned int) strtoul(argv[5], NULL, 0);
     policy = argv[6];
-
+    /*
     printf("\n***********CMPUT379***********\n");
     printf("pgsize: %hu\n", pgsize);
     printf("tlbentries: %u\n", tlbentries);
@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     printf("quantum: %d\n", quantum);
     printf("physpages: %d\n", physpages);
     printf("policy: %s\n", policy);
-
+    */
     int fileLineToRead[argc - 7];
     int fileEOFReached[argc - 7];
     int i, j;
@@ -85,21 +85,31 @@ int main(int argc, char *argv[]) {
 	TLB.element_count = (int*)malloc(sizeof(int));
 	*TLB.element_count = 0;
 	TLB.array = (int*)malloc(sizeof(int) * tlbentries);
+	//Sets all of TLB to a negative number in order to prevent potentially wrong TLB hits.
+	for(i = 0; i < tlbentries; i++)
+		TLB.array[i] = -1;
 
-	//Set all fileNotEmpty to true/1
+	//Set all fileNotEmpty to true
 	for(i = 0; i < argc - 7; i++) {
 		fileLineToRead[i] = 0;
 		fileEOFReached[i] = 1;
 	}
 	i = 7;
 	while(TraceEOFCheck(fileEOFReached, argc - 7) == 1){
-		printf("Reading File: %s\n",argv[i]);
+		//printf("Reading File: %s\n",argv[i]);
 		fileEOFReached[i - 7] = ReadTraceFile(argv[i], pageOffset, quantum, fileLineToRead[i - 7], i - 7);
-		//printf("fileEOFReached[%d]: %d\n",i, fileEOFReached[i]);
+		//printf("fileEOFReached[%d]: %d\n",i - 7, fileEOFReached[i - 7]);
 		fileLineToRead[i - 7] = fileLineToRead[i-7] + quantum;
 		i += 1;
 		if(i >= argc)
-			i = 7;
+		{i = 7;}
+
+		//If process specific, clear TLB.
+		if(*mode == 'p'){
+			int i_2;
+			for(i_2 = 0; i_2 < tlbentries; i_2++)
+			{TLB.array[i_2] = -1;}
+		}
 	}
 	/*
 	for (i = q.size - 1; i >= 0; i--) {
@@ -118,7 +128,7 @@ int TraceEOFCheck (int EOFtracker[], int size)
 	int i;
 	for (i = 0; i < size; i++)
 	{
-		//printf("EOF%d: %d\n", i , EOFtracker[i]);
+		//printf("EOF[%d]: %d\n", i , EOFtracker[i]);
 		if (EOFtracker[i] == 1) {
 			//printf("EOF Check returning 1\n");
 			return 1;
@@ -145,12 +155,12 @@ int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, i
 	for(j = 0; j < quantum + startByte; j++) {
 		if (fread(buffer,bytesToRead,1,fp) == 1) {
 			if(j >= startByte) {
-				printf("%d: ", j);
-				for(i = 0; i < bytesToRead; i++) {
-					printf("%x ", buffer[i]);
-				}
+				//printf("%d: ", j);
+				//for(i = 0; i < bytesToRead; i++) {
+				//	printf("%x ", buffer[i]);
+				//}
 				pageNumber = convert32bitCharToInt(buffer, pageOffset);
-				printf("page#: %d\n", pageNumber);
+				//printf("page#: %d\n", pageNumber);
 				
 				//Process for the LRU_TLB
 				hit_index = LRU_TBL_hit(TLB, pageNumber);
@@ -186,7 +196,7 @@ int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, i
 		}
 		else
 		{
-			printf("End of file reached.\n");
+			//printf("End of file reached.\n");
 			return 0;
 		}
 		
