@@ -187,42 +187,25 @@ int ReadTraceFile(FILE * fp, int pageOffset, int quantum, int globalIndex) {
 			{
 				//printf("TLB Miss!\n");
 				//If pageTable hit, we're done.
-				//TODO: Implement PageTable.
-
-				//Add the missed pageNumber into TLB.
-				LRU_add(TLB, pageNumber, hit_index);
-
-
-				//If pageTable miss, then add into memory.
-				if(*policy == 'f')
-				{
-					FIFO_Process(pageNumber, globalIndex);
+				int b = insert(&root, pageNumber, NULL);
+				if (b) { 
+				    TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
+				    //Add the missed pageNumber into TLB.
+				    LRU_add(TLB, pageNumber, hit_index);
 				}
-				else if (*policy == 'l')
-				{
-					//printf("TLB Miss!\n");
-					//If pageTable hit, we're done.
-					int b = insert(&root, pageNumber, NULL);
-					if (b) { 
-					    TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
-					    //Add the missed pageNumber into TLB.
-					    LRU_add(TLB, pageNumber, hit_index);
+				else {
+					TLBfault[globalIndex] = TLBfault[globalIndex] + 1;	
+					//If pageTable miss, then add into memory.
+					if (*policy == 'f')
+					{
+						FIFO_Process(pageNumber, globalIndex);
 					}
-					else {
-						TLBfault[globalIndex] = TLBfault[globalIndex] + 1;	
-						//If pageTable miss, then add into memory.
-						if (*policy == 'f')
-						{
-							FIFO_Process(pageNumber, globalIndex);
-						}
-						else if (*policy == 'l')
-						{
-							LRU_Process(pageNumber, globalIndex);
-						}
+					else if (*policy == 'l')
+					{
+						LRU_Process(pageNumber, globalIndex);
 					}
 				}
-			}
-			
+			}	
 		}
 		else
 		{
