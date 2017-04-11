@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include "bs.c"
 
 int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, int globalIndex);
 unsigned int convert32bitCharToInt(unsigned char buffer[], int pageOffset);
@@ -16,6 +17,9 @@ struct LRU_Stack LRU_q;
 
 //TLB
 struct LRU_Stack TLB;
+
+//PageTable
+tree *root = NULL;
 
 //The mode and policy, considered read only after being set.
 char * mode;
@@ -177,19 +181,27 @@ int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, i
 					//printf("TLB Miss!\n");
 					//If pageTable hit, we're done.
 					//TODO: Implement PageTable.
+					int b = insert(&root, pageNumber, NULL);
+					if (b) { 
+					    TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
+					    //Add the missed pageNumber into TLB.
+					    LRU_add(TLB, pageNumber, hit_index);
+					} else {
+					    TLBfault[globalIndex] = TLBfault[globalIndex] + 1;
+									
+					
 
-					//Add the missed pageNumber into TLB.
-					LRU_add(TLB, pageNumber, hit_index);
 
 
 					//If pageTable miss, then add into memory.
-					if(*policy == 'f')
+					if (*policy == 'f')
 					{
 						FIFO_Process(pageNumber, globalIndex);
 					}
 					else if (*policy == 'l')
 					{
 						LRU_Process(pageNumber, globalIndex);
+					}
 					}
 				}
 			}

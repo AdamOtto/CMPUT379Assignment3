@@ -13,7 +13,7 @@ int get_int(char *prompt);
 int traverse(tree *parent, int size);
 int insert(tree **root, int value, tree *parent);
 void flush_stdin(void);
-
+/*
 int main(int argc, char *argv[]) {
         int i;
 	int cmd = 0, value = 0;
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
 
 	return 0;
 }
-
+*/
 // Walk through the tree using In-Order
 int traverse(tree *parent, int size) {
 	if (parent != NULL) {
@@ -63,7 +63,8 @@ int traverse(tree *parent, int size) {
 	return size;
 }
 
-// Insert an element in the tree
+// Insert an element in the PageTable
+// Return true if hit
 int insert(tree **root, int value, tree *parent) {
 	tree *p = NULL;
 
@@ -78,13 +79,13 @@ int insert(tree **root, int value, tree *parent) {
 
 		*root = p;
 
-		return 1;
+		return 0;
 	}
 
 	if (value < (*root)->value) {
 		insert(&((*root)->left), value, *root);
 	} else if (value == (*root)->value) {
-		return 0;
+		return 1;
 	} else {
 		insert(&((*root)->right), value, *root);
 	}
