@@ -5,7 +5,8 @@
 #include <string.h>
 #include <math.h>
 
-int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, int globalIndex);
+//int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, int globalIndex);
+int ReadTraceFile(FILE * fp, int pageOffset, int quantum, int globalIndex);
 unsigned int convert32bitCharToInt(unsigned char buffer[], int pageOffset);
 void FIFO_Process(int pageNumber, int globalIndex);
 void LRU_Process(int pageNumber, int globalIndex);
@@ -65,6 +66,14 @@ int main(int argc, char *argv[]) {
 	int pageOffset = (log(pgsize) / log(2));
 	//printf("offset: %d\n", pageOffset);
 
+	//Create a pointer to each file given and opens them for future reading.
+	FILE **traceFiles;
+	traceFiles = (FILE **)malloc(sizeof(FILE) * argc - 7);
+	for(i = 7; i < argc; i++) {
+		printf("traceFiles[%d] = fopen(%s, rb);\n", i - 7, argv[i]);
+		traceFiles[i - 7] = fopen(argv[i], "rb");
+	}
+	
 	//Allocates memory for the physical pages depending on the policy.
 	if(*policy == 'f') {
 		FIFO_q.size = physpages;
@@ -94,15 +103,15 @@ int main(int argc, char *argv[]) {
 		fileLineToRead[i] = 0;
 		fileEOFReached[i] = 1;
 	}
-	i = 7;
+	i = 0;
 	while(TraceEOFCheck(fileEOFReached, argc - 7) == 1){
-		//printf("Reading File: %s\n",argv[i]);
-		fileEOFReached[i - 7] = ReadTraceFile(argv[i], pageOffset, quantum, fileLineToRead[i - 7], i - 7);
+		printf("Reading File: %s\n",argv[i + 7]);
+		fileEOFReached[i] = ReadTraceFile(traceFiles[i], pageOffset, quantum, i);//ReadTraceFile(argv[i], pageOffset, quantum, fileLineToRead[i - 7], i - 7);
 		//printf("fileEOFReached[%d]: %d\n",i - 7, fileEOFReached[i - 7]);
-		fileLineToRead[i - 7] = fileLineToRead[i-7] + quantum;
+		fileLineToRead[i] = fileLineToRead[i] + quantum;
 		i += 1;
-		if(i >= argc)
-		{i = 7;}
+		if(i >= argc - 7)
+		{i = 0;}
 
 		//If process specific, clear TLB.
 		if(*mode == 'p'){
@@ -119,6 +128,7 @@ int main(int argc, char *argv[]) {
 	for(i = 0; i < argc - 7; i++)
 	{
 		printf("%d %d %d %f\n", TLBhits[i], TLBfault[i], TLBpageout[i], TLBavg[i]);
+		fclose(traceFiles[i]);
 	}
 	return 0;
 }
@@ -145,63 +155,61 @@ unsigned int convert32bitCharToInt(unsigned char buffer[], int pageOffset){
 	return val;
 }
 
-int ReadTraceFile(char * FileName, int pageOffset, int quantum, int startByte, int globalIndex) {
+int ReadTraceFile(FILE * fp, int pageOffset, int quantum, int globalIndex) {
 	int i, j, hit_index;
 	int bytesToRead = 4; //4bytes * 8bits = 32 bits
-	FILE *fp;	
-	fp = fopen(FileName, "rb");
+	//FILE *fp;	
+	//fp = fopen(FileName, "rb");
 	unsigned char buffer[bytesToRead];
 	unsigned int pageNumber = 0;
-	for(j = 0; j < quantum + startByte; j++) {
+	for(j = 0; j < quantum; j++) {
 		if (fread(buffer,bytesToRead,1,fp) == 1) {
-			if(j >= startByte) {
-				//printf("%d: ", j);
-				//for(i = 0; i < bytesToRead; i++) {
-				//	printf("%x ", buffer[i]);
-				//}
-				pageNumber = convert32bitCharToInt(buffer, pageOffset);
-				//printf("page#: %d\n", pageNumber);
-				
-				//Process for the LRU_TLB
-				hit_index = LRU_TBL_hit(TLB, pageNumber);
+			printf("%d: ", j);
+			for(i = 0; i < bytesToRead; i++) {
+				printf("%x ", buffer[i]);
+			}
+			pageNumber = convert32bitCharToInt(buffer, pageOffset);
+			printf("page#: %d\n", pageNumber);
+			
+			//Process for the LRU_TLB
+			hit_index = LRU_TBL_hit(TLB, pageNumber);
 
-				//If hit, then we are done.
-				if(hit_index != -1) {
-					//printf("TLB Hit!\n");
-					LRU_add(TLB, pageNumber, hit_index);
-					TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
-				}
-				//If miss, check pageTable here.
-				else
+			//If hit, then we are done.
+			if(hit_index != -1) {
+				//printf("TLB Hit!\n");
+				LRU_add(TLB, pageNumber, hit_index);
+				TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
+			}
+			//If miss, check pageTable here.
+			else
+			{
+				//printf("TLB Miss!\n");
+				//If pageTable hit, we're done.
+				//TODO: Implement PageTable.
+
+				//Add the missed pageNumber into TLB.
+				LRU_add(TLB, pageNumber, hit_index);
+
+
+				//If pageTable miss, then add into memory.
+				if(*policy == 'f')
 				{
-					//printf("TLB Miss!\n");
-					//If pageTable hit, we're done.
-					//TODO: Implement PageTable.
-
-					//Add the missed pageNumber into TLB.
-					LRU_add(TLB, pageNumber, hit_index);
-
-
-					//If pageTable miss, then add into memory.
-					if(*policy == 'f')
-					{
-						FIFO_Process(pageNumber, globalIndex);
-					}
-					else if (*policy == 'l')
-					{
-						LRU_Process(pageNumber, globalIndex);
-					}
+					FIFO_Process(pageNumber, globalIndex);
+				}
+				else if (*policy == 'l')
+				{
+					LRU_Process(pageNumber, globalIndex);
 				}
 			}
+			
 		}
 		else
 		{
-			//printf("End of file reached.\n");
+			printf("End of file reached.\n");
 			return 0;
 		}
 		
 	}
-	fclose(fp);
 	return 1;
 }
 
