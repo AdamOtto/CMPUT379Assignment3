@@ -19,7 +19,8 @@ struct LRU_Stack LRU_q;
 struct LRU_Stack TLB;
 
 //PageTable
-tree *root = NULL;
+//tree *root = NULL;
+tree ** root;
 
 //The mode and policy, considered read only after being set.
 char * mode;
@@ -76,6 +77,11 @@ int main(int argc, char *argv[]) {
 		traceFiles[i - 7] = fopen(argv[i], "rb");
 	}
 	
+	root = (tree **) malloc(sizeof(struct tree) * argc - 7);
+	for(i = 7; i < argc; i++) {
+		root[i] = NULL;
+	}
+
 	//Allocates memory for the physical pages depending on the policy.
 	if(*policy == 'f') {
 		FIFO_q.size = physpages;
@@ -187,7 +193,7 @@ int ReadTraceFile(FILE * fp, int pageOffset, int quantum, int globalIndex) {
 			{
 				//printf("TLB Miss!\n");
 				//If pageTable hit, we're done.
-				int b = insert(&root, pageNumber, NULL);
+				int b = insert(&root[globalIndex], pageNumber, NULL);
 				if (b) { 
 				    TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
 				    //Add the missed pageNumber into TLB.
