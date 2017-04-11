@@ -19,7 +19,6 @@ struct LRU_Stack LRU_q;
 struct LRU_Stack TLB;
 
 //PageTable
-//tree *root = NULL;
 tree ** root;
 
 //The mode and policy, considered read only after being set.
@@ -28,9 +27,10 @@ char * policy;
 
 //These contain the stats that are collected for each trace file.
 int * TLBhits;
-int * TLBfault;
-int * TLBpageout;
-float * TLBavg;
+int * PageFault;
+int * PHYSpageout;
+float * PageSizeAvg;
+int * PageSizeReadCount;
 
 int main(int argc, char *argv[]) {
 
@@ -60,10 +60,10 @@ int main(int argc, char *argv[]) {
 
     // Allocate space for the global stats.
     TLBhits = (int *)malloc(sizeof(int) * argc - 7);
-    TLBfault = (int *)malloc(sizeof(int) * argc - 7);
-    TLBpageout = (int *)malloc(sizeof(int) * argc - 7);
-    TLBavg = (float *)malloc(sizeof(float) * argc - 7);
-
+    PageFault = (int *)malloc(sizeof(int) * argc - 7);
+    PHYSpageout = (int *)malloc(sizeof(int) * argc - 7);
+    PageSizeAvg = (float *)malloc(sizeof(float) * argc - 7);
+    PageSizeReadCount = (int *)malloc(sizeof(int) * argc - 7);
 
 	// We're always dealing with a 32bit mem-ref.
 	// Get the page offset. represents the number of bits used in the offset.
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
 	*/
 	for(i = 0; i < argc - 7; i++)
 	{
-		printf("%d %d %d %f\n", TLBhits[i], TLBfault[i], TLBpageout[i], TLBavg[i]);
+		printf("%d %d %d %f\n", TLBhits[i], PageFault[i], PHYSpageout[i], (float)(PageSizeAvg[i] / PageSizeReadCount[i]));
 		fclose(traceFiles[i]);
 	}
 	return 0;
@@ -200,7 +200,7 @@ int ReadTraceFile(FILE * fp, int pageOffset, int quantum, int globalIndex) {
 				    LRU_add(TLB, pageNumber, hit_index);
 				}
 				else {
-					TLBfault[globalIndex] = TLBfault[globalIndex] + 1;	
+					PageFault[globalIndex] = PageFault[globalIndex] + 1;	
 					//If pageTable miss, then add into memory.
 					if (*policy == 'f')
 					{
@@ -211,14 +211,16 @@ int ReadTraceFile(FILE * fp, int pageOffset, int quantum, int globalIndex) {
 						LRU_Process(pageNumber, globalIndex);
 					}
 				}
-			}	
+			}
+			//Take the new PageSize average.
+			PageSizeReadCount[globalIndex] = PageSizeReadCount[globalIndex] + 1;
+			PageSizeAvg[globalIndex] = (float)( PageSizeAvg[globalIndex] + traverse(root[globalIndex], 0) );
 		}
 		else
 		{
 			//printf("End of file reached.\n");
 			return 0;
-		}
-		
+		}		 
 	}
 	return 1;
 }
@@ -227,9 +229,9 @@ void FIFO_Process(int pageNumber, int globalIndex)
 {
 	if(FIFO_TBL_hit(FIFO_q, pageNumber) == 0) {
 		FIFO_Enqueue(FIFO_q, pageNumber);
-		//TLBfault[globalIndex] = TLBfault[globalIndex] + 1;
+		//PageFault[globalIndex] = PageFault[globalIndex] + 1;
 		if(*FIFO_q.element_count > FIFO_q.size)
-			TLBpageout[globalIndex] = TLBpageout[globalIndex] + 1;
+			PHYSpageout[globalIndex] = PHYSpageout[globalIndex] + 1;
 	}
 	//else {
 	//	TLBhits[globalIndex] = TLBhits[globalIndex] + 1;
@@ -242,5 +244,5 @@ void LRU_Process(int pageNumber, int globalIndex)
 	int hit_index = LRU_TBL_hit(LRU_q, pageNumber);
 	pageOut = LRU_add(LRU_q, pageNumber, hit_index);
 	if(pageOut == 1)
-		TLBpageout[globalIndex] = TLBpageout[globalIndex] + 1;
+		PHYSpageout[globalIndex] = PHYSpageout[globalIndex] + 1;
 }
