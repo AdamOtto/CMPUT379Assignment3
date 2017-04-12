@@ -112,6 +112,7 @@ int main(int argc, char *argv[]) {
             int i_2;
             for (i_2 = 0; i_2 < tlbentries; i_2++)
                 TLB.array[i_2] = -1;
+            TLB.element_count = 0;
         }
     }
     for (i = 0; i < argc - 7; i++) {
